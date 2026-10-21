@@ -30,12 +30,16 @@ class AiAssistant_GeminiProvider implements AiAssistant_AiProviderInterface
         );
 
         $endpoint = rtrim($this->configValue('endpoint', 'https://generativelanguage.googleapis.com/v1beta'), '/')
-            . '/models/' . rawurlencode($this->model()) . ':generateContent?key=' . rawurlencode($apiKey);
+            . '/models/' . rawurlencode($this->model()) . ':generateContent';
 
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+        // Send the key as a header: query strings end up in proxy and access logs.
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'x-goog-api-key: ' . $apiKey,
+        ));
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout($options));
         curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout($options));
