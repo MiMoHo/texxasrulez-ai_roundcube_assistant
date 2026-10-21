@@ -6,9 +6,19 @@
   var panel;
   var pendingJobs = {};
 
+  // Safe for element text and quoted attribute values alike.
   function escapeText(value) {
-    return $('<div/>').text(value == null ? '' : String(value)).html();
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
+
+  // risk_level comes from the model and may be steered by the scanned mail,
+  // so only known levels become part of a class name.
+  var THREAT_LEVELS = ['low', 'medium', 'high', 'critical', 'unknown'];
 
   function ensurePanel() {
     if (panel && panel.length) {
@@ -138,9 +148,14 @@
 
   function renderThreat(result, data) {
     var content = $('<div class="ai-assistant-result"></div>');
-    var level = String(result.risk_level || 'Unknown').toLowerCase();
-    content.append('<div class="ai-threat ai-threat-' + escapeText(level) + '"><strong>' + escapeText(result.risk_level || 'Unknown risk') + '</strong><span></span></div>');
-    content.find('.ai-threat span').text(result.summary ? ' ' + result.summary : '');
+    var level = String(result.risk_level || 'Unknown').trim().toLowerCase();
+    var threat = $('<div class="ai-threat"><strong></strong><span></span></div>');
+    if (THREAT_LEVELS.indexOf(level) !== -1) {
+      threat.addClass('ai-threat-' + level);
+    }
+    threat.find('strong').text(result.risk_level || 'Unknown risk');
+    threat.find('span').text(result.summary ? ' ' + result.summary : '');
+    content.append(threat);
     if (result.confidence) {
       addTextSection(content, 'Confidence', result.confidence);
     }
